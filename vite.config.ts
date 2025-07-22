@@ -7,7 +7,7 @@ export default defineConfig({
 		proxy: {
 			// Проксируем все запросы, начинающиеся с /api
 			'/api': {
-				target: 'http://localhost:8000', // Адрес нашего FastAPI бэкенда
+				target: 'https://dev.voicenote.ru',
 				changeOrigin: true // Необходимо для корректной работы прокси
 			}
 		}
