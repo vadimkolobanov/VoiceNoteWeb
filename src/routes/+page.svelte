@@ -1,88 +1,51 @@
 <script lang="ts">
-    import { user } from '../stores/auth';
+    import { user } from '$lib/stores/auth';
+    import { goto } from '$app/navigation';
 </script>
 
-<div class="dashboard">
-    <h1>Добро пожаловать, {$user?.first_name}!</h1>
-    <p>Это ваша главная панель. Выберите раздел в меню выше, чтобы начать.</p>
+<div class="space-y-8">
+    <div>
+        <h1 class="text-3xl font-bold">Добро пожаловать, {$user?.first_name}!</h1>
+        <p class="text-muted-foreground">Это ваша главная панель. Выберите раздел в меню, чтобы начать.</p>
+    </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h2>Уровень</h2>
-            <span class="stat-value">{$user?.level}</span>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border bg-card text-card-foreground p-6">
+            <h3 class="text-sm font-medium text-muted-foreground">Уровень</h3>
+            <p class="text-4xl font-bold">{$user?.level}</p>
         </div>
-        <div class="stat-card">
-            <h2>Опыт (XP)</h2>
-            <span class="stat-value">{$user?.xp}</span>
+        <div class="rounded-xl border bg-card text-card-foreground p-6">
+            <h3 class="text-sm font-medium text-muted-foreground">Опыт (XP)</h3>
+            <p class="text-4xl font-bold">{$user?.xp}</p>
         </div>
-        <div class="stat-card">
-            <h2>VIP Статус</h2>
-            <span class="stat-value">{$user?.is_vip ? '👑 VIP' : 'Free'}</span>
+        <div class="rounded-xl border bg-card text-card-foreground p-6">
+            <h3 class="text-sm font-medium text-muted-foreground">VIP Статус</h3>
+            <p class="text-4xl font-bold">{$user?.is_vip ? '👑 VIP' : 'Free'}</p>
         </div>
-        <div class="stat-card">
-            <h2>Часовой пояс</h2>
-            <span class="stat-value">{$user?.timezone}</span>
+        <!-- ИСПРАВЛЕНИЕ 2: ИЗМЕНЕН РАЗМЕР ШРИФТА ДЛЯ ТАЙМЗОНЫ -->
+        <div class="rounded-xl border bg-card text-card-foreground p-6">
+            <h3 class="text-sm font-medium text-muted-foreground">Часовой пояс</h3>
+            <p class="text-2xl lg:text-3xl font-bold break-words">{$user?.timezone}</p>
         </div>
     </div>
 
-    <div class="actions">
-        <h2>Быстрые действия</h2>
-        <a href="/notes/new" class="action-button">Создать заметку</a>
-        <a href="/birthdays/new" class="action-button">Добавить день рождения</a>
+    <div>
+        <h2 class="text-2xl font-semibold mb-4">Быстрые действия</h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+            <button
+                    on:click={() => goto('/notes/new')}
+                    class="w-full text-left rounded-lg border bg-card p-4 hover:bg-muted transition-colors"
+            >
+                <h3 class="font-semibold">Создать заметку</h3>
+                <p class="text-sm text-muted-foreground">Быстро запишите новую идею или задачу.</p>
+            </button>
+            <button
+                    on:click={() => goto('/birthdays/new')}
+                    class="w-full text-left rounded-lg border bg-card p-4 hover:bg-muted transition-colors"
+            >
+                <h3 class="font-semibold">Добавить день рождения</h3>
+                <p class="text-sm text-muted-foreground">Сохраните важную дату.</p>
+            </button>
+        </div>
     </div>
 </div>
-
-<style>
-    .dashboard {
-        padding: 1rem;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    .stat-card {
-        background-color: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-align: center;
-    }
-
-    .stat-card h2 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1rem;
-        color: #6b7280;
-    }
-
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #111827;
-    }
-    .actions {
-        margin-top: 2.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e5e7eb;
-    }
-    .action-button {
-        display: inline-block;
-        margin-right: 1rem;
-        padding: 0.75rem 1.5rem;
-        background-color: #7c3aed; /* Фиолетовый */
-        color: white;
-        text-decoration: none;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: background-color 0.2s;
-    }
-    .action-button:hover {
-        background-color: #6d28d9;
-    }
-</style>

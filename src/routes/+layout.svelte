@@ -1,98 +1,161 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import type { LayoutData } from './$types';
-	import { user, isAuthenticated } from '../stores/auth';
-	import '../app.css';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { LogOut, BotMessageSquare, Menu, X } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { user, isAuthenticated } from '$lib/stores/auth';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import '$lib/styles/app.css';
 
-	export let data: LayoutData;
+	export let data;
+
 	let mobileMenuOpen = false;
 
-	$: {
-		if (data.user) {
-			user.set(data.user);
-			isAuthenticated.set(true);
-		} else {
-			user.set(null);
-			isAuthenticated.set(false);
-		}
+	$: if (data.user) {
+		user.set(data.user);
+		isAuthenticated.set(true);
+	} else {
+		user.set(null);
+		isAuthenticated.set(false);
 	}
 
 	function handleLogout() {
-		localStorage.removeItem('accessToken');
-		user.set(null);
-		isAuthenticated.set(false);
-		// Прямой редирект на страницу логина
-		goto('/login');
+		if (browser) {
+			localStorage.removeItem('accessToken');
+			user.set(null);
+			isAuthenticated.set(false);
+			goto('/login');
+		}
 	}
 
-	// Закрываем мобильное меню при переходе на другую страницу
-	$: $page.url.pathname, (mobileMenuOpen = false);
+	$: if ($page.url.pathname) {
+		mobileMenuOpen = false;
+	}
 </script>
 
-<div class="min-h-screen bg-gray-50 text-gray-900 antialiased">
-	{#if $isAuthenticated}
-		<header class="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-lg">
-			<!-- Увеличиваем высоту хедера (h-16 -> h-20) и отступы (container) -->
-			<div class="container flex h-20 items-center max-w-7xl">
-				<a href="/" class="mr-8 flex items-center space-x-3">
-					<BotMessageSquare class="h-8 w-8 text-primary" />
-					<!-- Увеличиваем шрифт логотипа (text-lg -> text-xl) -->
-					<span class="font-bold text-xl">VoiceNote AI</span>
+{#if $isAuthenticated}
+	<div class="flex h-screen w-full flex-col">
+		<header
+				class="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card/80 px-4 backdrop-blur-md sm:px-6"
+		>
+			<a href="/" class="flex items-center gap-2 font-semibold">
+				<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="h-6 w-6 text-primary"
+						aria-hidden="true"
+				>
+					<path
+							d="M12 2a3.5 3.5 0 0 0-3.5 3.5v1.07A4.5 4.5 0 0 0 5 10.5V14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5a4.5 4.5 0 0 0-3.5-4.43V5.5A3.5 3.5 0 0 0 12 2z"
+					/>
+					<path d="M8 15v1a4 4 0 0 0 8 0v-1" />
+				</svg>
+				<span class="hidden sm:inline-block text-lg">VoiceNote</span>
+			</a>
+			<nav
+					class="hidden flex-col gap-1 rounded-lg bg-secondary p-1 font-medium md:flex md:flex-row md:items-center text-base"
+			>
+				<a
+						href="/notes"
+						class="px-4 py-1.5 rounded-md transition-colors"
+						class:bg-background={$page.url.pathname.startsWith('/notes')}
+						class:hover:bg-muted={!$page.url.pathname.startsWith('/notes')}>Заметки</a
+				>
+				<a
+						href="/birthdays"
+						class="px-4 py-1.5 rounded-md transition-colors"
+						class:bg-background={$page.url.pathname.startsWith('/birthdays')}
+						class:hover:bg-muted={!$page.url.pathname.startsWith('/birthdays')}>Дни рождения</a
+				>
+				<a
+						href="/shopping-list"
+						class="px-4 py-1.5 rounded-md transition-colors"
+						class:bg-background={$page.url.pathname.startsWith('/shopping-list')}
+						class:hover:bg-muted={!$page.url.pathname.startsWith('/shopping-list')}>Покупки</a
+				>
+				<!-- ИСПРАВЛЕНИЕ 1: ДОБАВЛЕНА ССЫЛКА -->
+				<a
+						href="/settings"
+						class="px-4 py-1.5 rounded-md transition-colors"
+						class:bg-background={$page.url.pathname.startsWith('/settings')}
+						class:hover:bg-muted={!$page.url.pathname.startsWith('/settings')}>Настройки</a
+				>
+			</nav>
+
+			<div class="ml-auto"></div>
+
+			<div class="flex items-center gap-3">
+				<a
+						href="/profile"
+						class="relative flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-primary to-purple-600 text-primary-foreground hover:opacity-90 transition-opacity"
+						aria-label="Профиль"
+				>
+					<span class="font-bold text-lg">{($user?.first_name || 'U').charAt(0)}</span>
 				</a>
-				<!-- Увеличиваем шрифт и отступы в навигации (text-sm -> text-base, gap-6 -> gap-8) -->
-				<nav class="hidden items-center gap-8 text-base font-medium md:flex">
-					<a href="/notes" class="text-foreground/70 transition-colors hover:text-foreground">Заметки</a>
-					<a href="/birthdays" class="text-foreground/70 transition-colors hover:text-foreground">Дни рождения</a>
-					<a href="/shopping-list" class="text-foreground/70 transition-colors hover:text-foreground">Покупки</a>
-					<a href="/profile" class="text-foreground/70 transition-colors hover:text-foreground">Профиль</a>
-				</nav>
-				<div class="flex flex-1 items-center justify-end space-x-4">
-					<!-- Увеличиваем шрифт приветствия (text-sm -> text-base) -->
-					<span class="text-base text-muted-foreground hidden sm:inline"
-					>Привет, {$user?.first_name}!</span
+				<button
+						on:click={handleLogout}
+						class="hidden sm:flex items-center justify-center h-10 w-10 rounded-full bg-secondary text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+						aria-label="Выйти"
+				>
+					<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+					><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline
+							points="16 17 21 12 16 7"
+					/><line x1="21" y1="12" x2="9" y2="12" /></svg
 					>
-					<!-- Увеличиваем размер кнопки (size="sm" -> size="default") -->
-					<Button on:click={handleLogout} variant="ghost" size="default" class="hidden md:flex">
-						<LogOut class="h-4 w-4 mr-2" />
-						Выйти
-					</Button>
-					<Button
-							on:click={() => (mobileMenuOpen = !mobileMenuOpen)}
-							variant="ghost"
-							size="icon"
-							class="md:hidden"
-					>
-						{#if mobileMenuOpen}
-							<X class="h-6 w-6" />
-						{:else}
-							<Menu class="h-6 w-6" />
-						{/if}
-					</Button>
-				</div>
+				</button>
 			</div>
 
-			<!-- Мобильное меню (увеличиваем шрифты) -->
-			{#if mobileMenuOpen}
-				<div class="md:hidden absolute top-20 left-0 w-full bg-white shadow-lg p-4">
-					<nav class="flex flex-col gap-4 text-lg">
-						<a href="/notes" class="py-2 border-b">Заметки</a>
-						<a href="/birthdays" class="py-2 border-b">Дни рождения</a>
-						<a href="/shopping-list" class="py-2 border-b">Покупки</a>
-						<a href="/profile" class="py-2 border-b">Профиль</a>
-						<Button on:click={handleLogout} variant="destructive" size="lg" class="w-full mt-4">
-							<LogOut class="h-5 w-5 mr-2" />
-							Выйти
-						</Button>
-					</nav>
-				</div>
-			{/if}
+			<button on:click={() => (mobileMenuOpen = !mobileMenuOpen)} class="p-2 sm:hidden" aria-label="Открыть меню">
+				{#if mobileMenuOpen}
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+				{:else}
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
+				{/if}
+			</button>
 		</header>
-	{/if}
 
-	<main class="container max-w-7xl py-8">
-		<slot />
-	</main>
-</div>
+		{#if mobileMenuOpen}
+			<div class="sm:hidden border-b bg-card">
+				<nav class="grid gap-2 p-4 text-lg font-medium">
+					<a href="/notes" class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">Заметки</a>
+					<a href="/birthdays" class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">Дни рождения</a>
+					<a href="/shopping-list" class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">Покупки</a>
+					<a href="/profile" class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">Профиль</a>
+					<a href="/settings" class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">Настройки</a>
+					<button on:click={handleLogout} class="flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground text-left">Выйти</button>
+				</nav>
+			</div>
+		{/if}
+
+		<div class="flex-1 overflow-auto">
+			<main class="container mx-auto max-w-7xl p-4 sm:px-6 md:py-8">
+				<slot />
+			</main>
+		</div>
+
+		<footer class="mt-auto border-t bg-card/80 p-4 text-center text-xs text-muted-foreground">
+			<div class="container mx-auto flex flex-wrap justify-center gap-x-6 gap-y-2">
+				<a href="https://voicenote.ru" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">voicenote.ru</a>
+				<a href="https://t.me/voicenote_news" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Канал новостей</a>
+				<a href="https://t.me/tgnote_by_bot" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">Открыть бота</a>
+			</div>
+		</footer>
+	</div>
+{:else}
+	<slot />
+{/if}

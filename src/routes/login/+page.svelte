@@ -1,98 +1,104 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/button/button.svelte';
-	import * as Card from '$lib/components/ui/card';
-	import { BotMessageSquare, LoaderCircle } from 'lucide-svelte';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
 	let code = '';
 	let isLoading = false;
 	let errorMessage = '';
 
-	async function handleLogin() {
-		if (!code || code.length < 6) {
-			errorMessage = 'Пожалуйста, введите 6-значный код.';
-			return;
+	onMount(() => {
+		if (localStorage.getItem('accessToken')) {
+			goto('/');
 		}
+	});
+
+	async function handleSubmit() {
+		if (!browser) return;
 		isLoading = true;
 		errorMessage = '';
-
 		try {
-			await new Promise((res) => setTimeout(res, 500));
-
 			const response = await fetch('/api/v1/auth/code', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ code: code.toUpperCase() })
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code })
 			});
-
-			const data = await response.json();
-
-			if (!response.ok) {
-				throw new Error(data.detail || 'Неверный код или истек срок его действия.');
-			}
-
-			if (data.access_token) {
+			if (response.ok) {
+				const data = await response.json();
 				localStorage.setItem('accessToken', data.access_token);
-				window.location.href = '/';
+				window.location.href = '/'; // Полная перезагрузка для обновления layout
+			} else {
+				const errorData = await response.json();
+				errorMessage = errorData.detail || 'Произошла ошибка';
 			}
-		} catch (error: any) {
-			errorMessage = error.message;
-			code = '';
+		} catch (e) {
+			errorMessage = 'Сетевая ошибка. Проверьте подключение.';
 		} finally {
 			isLoading = false;
 		}
 	}
 </script>
 
-<div class="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-	<div class="w-full max-w-md">
-		<div class="text-center mb-6">
-			<div class="inline-block bg-primary text-primary-foreground p-4 rounded-2xl mb-4">
-				<BotMessageSquare class="h-10 w-10" />
-			</div>
-			<h1 class="text-3xl font-bold">Вход в VoiceNote AI</h1>
-			<p class="text-muted-foreground mt-2">
+<div class="flex min-h-screen items-center justify-center bg-background p-4">
+	<div class="w-full max-w-md space-y-8">
+		<div class="text-center">
+			<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="48"
+					height="48"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="mx-auto h-12 w-12 text-primary"
+			>
+				<path
+						d="M12 2a3.5 3.5 0 0 0-3.5 3.5v1.07A4.5 4.5 0 0 0 5 10.5V14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5a4.5 4.5 0 0 0-3.5-4.43V5.5A3.5 3.5 0 0 0 12 2z"
+				/>
+				<path d="M8 15v1a4 4 0 0 0 8 0v-1" />
+			</svg>
+			<h1 class="mt-6 text-3xl font-bold tracking-tight text-foreground">Вход в VoiceNote AI</h1>
+			<p class="mt-2 text-muted-foreground">
 				Введите 6-значный код, который вы получили от бота в Telegram.
 			</p>
 		</div>
+		<form class="space-y-6" on:submit|preventDefault={handleSubmit}>
+			<div>
+				<label for="code" class="sr-only">Код активации</label>
+				<input
+						id="code"
+						name="code"
+						type="text"
+						bind:value={code}
+						required
+						class="relative block w-full appearance-none rounded-md border border-border bg-input px-3 py-3 text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm"
+						placeholder="ABC-123"
+						on:input={() => (errorMessage = '')}
+				/>
+			</div>
 
-		<Card.Root class="shadow-xl rounded-2xl">
-			<Card.Content class="p-6">
-				<form on:submit|preventDefault={handleLogin} class="space-y-6">
-					<div>
-						<label for="code-input" class="text-sm font-medium text-muted-foreground"
-						>Код активации</label
-						>
-						<input
-								id="code-input"
-								type="text"
-								bind:value={code}
-								placeholder="••••••"
-								maxlength="6"
-								class="mt-1 flex h-14 w-full rounded-xl border border-input bg-background px-3 py-2 text-3xl ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-center tracking-[0.5em] uppercase"
-								disabled={isLoading}
-								on:input={() => (errorMessage = '')}
-						/>
-					</div>
-					{#if errorMessage}
-						<p class="text-sm font-medium text-destructive text-center">{errorMessage}</p>
-					{/if}
-					<Button type="submit" class="w-full h-12 text-lg" disabled={isLoading || code.length < 6}>
-						{#if isLoading}
-							<LoaderCircle class="mr-2 h-5 w-5 animate-spin" />
-						{/if}
-						Войти
-					</Button>
-				</form>
-			</Card.Content>
-		</Card.Root>
-		<p class="px-8 text-center text-sm text-muted-foreground mt-6">
-			Нет кода? Откройте
-			<a href="https://t.me/YOUR_BOT_USERNAME_HERE" target="_blank" class="underline hover:text-primary">
-				бота в Telegram
-			</a>
-			и отправьте команду <code>/code</code>.
-		</p>
+			{#if errorMessage}
+				<p class="text-sm text-destructive">{errorMessage}</p>
+			{/if}
+
+			<div>
+				<button
+						type="submit"
+						disabled={isLoading}
+						class="group relative flex w-full justify-center rounded-md bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+				>
+					{isLoading ? 'Проверка...' : 'Войти'}
+				</button>
+			</div>
+		</form>
+		<div class="text-center text-sm text-muted-foreground">
+			<p>
+				Нет кода? Откройте
+				<a href="https://t.me/tgnote_by_bot" target="_blank" class="font-medium text-primary hover:underline">бота в Telegram</a>
+				и отправьте команду <code class="bg-secondary p-1 rounded-sm">/code</code>.
+			</p>
+		</div>
 	</div>
 </div>
